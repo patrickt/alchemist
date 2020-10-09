@@ -52,6 +52,7 @@ library
                        Alchemist.IO
                        Alchemist.Experiment
                        Alchemist.Observation
+                       Alchemist.Result
                        Alchemist.Internal.Types
 
 test-suite alchemist-test

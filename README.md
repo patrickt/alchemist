@@ -5,3 +5,7 @@
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A library for refactoring critical paths.
+
+This is a clone of Ruby's [`scientist`](http://github.com/github/scientist).
+
+TODO: document me

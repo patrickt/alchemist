@@ -1,44 +1,43 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Alchemist.Internal.Types
-  ( Experiment (..)
-  , Candidate (..)
-  , Result (..)
-  , Observation (..)
-  ) where
+  ( Experiment (..),
+    Candidate (..),
+    Result (..),
+    Observation (..),
+  )
+where
 
-import Data.Text (Text)
 import Control.Exception (SomeException)
+import Data.Text (Text)
 import Data.Time.Clock
 
 data Experiment m a = Experiment
-  { enabled :: m Bool,
-    control :: m a,
+  {
     candidates :: [Candidate m a],
-    raised :: Text -> SomeException -> m a,
-    name :: Text,
     comparator :: Eq a => a -> a -> Bool,
-    publish :: Result m a -> m ()
+    control :: m a,
+    enabled :: m Bool,
+    name :: Text,
+    publish :: Result m a -> m (),
+    raised :: Text -> SomeException -> m a
   }
 
 data Candidate m a = Candidate
-  { action :: m a
-  , name :: Text
+  { action :: m a,
+    name :: Text
   }
 
 data Result m a = Result
-  { observations :: [Observation m a]
-  , control :: m a
-  , experiment :: Experiment m a
-  , ignored :: [Observation m a]
-  , mismatched :: [Observation m a]
+  { observations :: [Observation m a],
+    control :: a,
+    ignored :: [Observation m a],
+    mismatched :: [Observation m a]
   }
 
 data Observation m a = Observation
   { duration :: NominalDiffTime,
-    exception :: Maybe SomeException,
     experiment :: Experiment m a,
-    name :: Text,
-    value :: a
+    value :: Either SomeException a
   }
