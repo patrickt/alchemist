@@ -1,9 +1,7 @@
-module Alchemist.Internal.Shuffle where
+module Alchemist.Internal.Shuffle (permute) where
 
-import Control.Monad.Random
 import Control.Monad
-
-type R a = Rand StdGen a
+import System.Random
 
     -- List returning elements in random order
 type RandomList a = IO [a]
@@ -17,17 +15,18 @@ singleton x = return [x]
     -- Fair merge of random lists
 merge :: RandomList a -> RandomList a -> RandomList a
 merge rxs rys = do
-        xs <- rxs
-        ys <- rys
-        merge' (length xs, xs) (length ys, ys)
-    where
+  xs <- rxs
+  ys <- rys
+  merge' (length xs, xs) (length ys, ys)
+  where
     merge' (0 , [])   (_ , ys)   = return ys
     merge' (_ , xs)   (0 , [])   = return xs
     merge' (nx, x:xs) (ny, y:ys) = do
-        k <- randomRIO (1,nx+ny)   -- selection weighted by size
-        if k <= nx
-            then (x:) `liftM` ((nx-1, xs) `merge'` (ny, y:ys))
-            else (y:) `liftM` ((nx, x:xs) `merge'` (ny-1, ys))
+      k <- randomRIO (1,nx+ny)   -- selection weighted by size
+      if k <= nx
+        then (x:) `liftM` ((nx-1, xs) `merge'` (ny, y:ys))
+        else (y:) `liftM` ((nx, x:xs) `merge'` (ny-1, ys))
+    merge' _ _ = error ("Unhandled case in merge function")
 
     -- Generate a random permutation in O(n log n)
 permute :: [a] -> RandomList a

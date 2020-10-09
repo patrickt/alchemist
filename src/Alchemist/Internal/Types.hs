@@ -14,8 +14,7 @@ import Data.Text (Text)
 import Data.Time.Clock
 
 data Experiment m a = Experiment
-  {
-    candidates :: [Candidate m a],
+  { candidates :: [Candidate m a],
     comparator :: Eq a => a -> a -> Bool,
     control :: m a,
     enabled :: m Bool,

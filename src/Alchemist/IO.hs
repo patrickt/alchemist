@@ -14,6 +14,7 @@ module Alchemist.IO
 import Control.Exception qualified as Exc
 import Control.Monad.IO.Class
 import System.Random
+import Alchemist.Internal.Shuffle
 import Data.Text (Text)
 import Data.Function ((&))
 import Alchemist.Experiment
@@ -85,7 +86,8 @@ run e
       if (not on || not should)
         then pure normal
         else do
-          datums <- traverse (execute e) (candidates e)
+          shuffled <- permute (candidates e)
+          datums <- traverse (execute e) shuffled
           let res = Result datums normal [] []
           publish e res
           case value (head datums) of
