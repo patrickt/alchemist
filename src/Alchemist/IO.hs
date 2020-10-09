@@ -1,27 +1,33 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Alchemist.IO
-  ( Experiment (..)
-  , new
-  , try
-  , run
-  -- * Re-exports
-  , (&)
-  ) where
+  ( Experiment (..),
+    new,
+    try,
+    handling,
+    reporting,
+    runIf,
+    run,
 
+    -- * Re-exports
+    (&),
+  )
+where
+
+import Alchemist.Candidate hiding (name)
+import Alchemist.Experiment
+import Alchemist.Internal.Shuffle
+import Alchemist.Observation
+import Alchemist.Result hiding (control)
+import Control.Exception (SomeException)
 import Control.Exception qualified as Exc
 import Control.Monad.IO.Class
-import System.Random
-import Alchemist.Internal.Shuffle
-import Data.Text (Text)
 import Data.Function ((&))
-import Alchemist.Experiment
-import Alchemist.Result hiding (control)
-import Alchemist.Candidate hiding (name)
-import Alchemist.Observation
+import Data.Text (Text)
 import Data.Time.Clock
+import System.Random
 
 -- | Creates an 'Experiment' suitable for running an action in 'IO'.
 -- The resulting 'Experiment' has its fields set as follows:
@@ -41,10 +47,12 @@ import Data.Time.Clock
 --     & try (putStrLn "Another alternative")
 --     & run
 -- @
-new
-  :: Text -- ^ the name of this experiement
-  -> IO a -- ^ the control (default) action to run
-  -> Experiment IO a
+new ::
+  -- | the name of this experiement
+  Text ->
+  -- | the control (default) action to run
+  IO a ->
+  Experiment IO a
 new n c =
   Experiment
     { enabled = pure True,
@@ -61,7 +69,16 @@ new n c =
 -- will execute the provided IO action and report the results
 -- via the experiment's @publish@ function.
 try :: IO a -> Experiment IO a -> Experiment IO a
-try c e = e { candidates = Candidate c "experiment" : candidates e }
+try c e = e {candidates = Candidate c "experiment" : candidates e}
+
+handling :: (Text -> SomeException -> IO a) -> Experiment IO a -> Experiment IO a
+handling f e = e {raised = f}
+
+reporting :: (Result IO a -> IO ()) -> Experiment IO a -> Experiment IO a
+reporting f e = e {publish = f}
+
+runIf :: IO Bool -> Experiment IO a -> Experiment IO a
+runIf x e = e {enabled = x}
 
 execute :: Experiment IO a -> Candidate IO a -> IO (Observation IO a)
 execute e c = do
@@ -69,27 +86,25 @@ execute e c = do
   val <- Exc.try (action c)
   end <- liftIO getCurrentTime
 
-  pure Observation
-    { duration = diffUTCTime end start
-    , experiment = e
-    , value = val
-    }
+  pure
+    Observation
+      { duration = diffUTCTime end start,
+        experiment = e,
+        value = val
+      }
 
 -- | Run an 'Experiment' in the 'IO' monad.
-run ::  Experiment IO a -> IO a
-run e
-  | null (candidates e) = control e
-  | otherwise = do
-      on <- enabled e
-      should <- randomIO
-      normal <- control e
-      if (not on || not should)
+run :: Experiment IO a -> IO a
+run e = do
+  on <- enabled e
+  normal <- control e
+  if not on
+    then pure normal
+    else do
+      shuffled <- permute (candidates e)
+      datums <- traverse (execute e) shuffled
+      let res = Result datums normal [] []
+      publish e res
+      if null datums
         then pure normal
-        else do
-          shuffled <- permute (candidates e)
-          datums <- traverse (execute e) shuffled
-          let res = Result datums normal [] []
-          publish e res
-          case value (head datums) of
-            Left x -> raised e (name e) x
-            Right v -> pure v
+        else either (raised e (name e)) pure (value (head datums))

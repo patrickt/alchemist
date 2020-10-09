@@ -23,7 +23,7 @@ source-repository head
 common common-options
   build-depends:       base ^>= 4.14.0.0
                      , exceptions
-                     , random ^>= 1.2
+                     , random
                      , text
                      , time
 
@@ -62,6 +62,7 @@ test-suite alchemist-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       alchemist
+                       , hedgehog
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N
