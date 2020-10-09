@@ -22,8 +22,10 @@ source-repository head
 
 common common-options
   build-depends:       base ^>= 4.14.0.0
-                     , text
+                     , exceptions
                      , random ^>= 1.2
+                     , text
+                     , time
 
   ghc-options:         -Wall
                        -Wcompat
@@ -46,6 +48,8 @@ library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     Alchemist
+                       Alchemist.Candidate
+                       Alchemist.IO
                        Alchemist.Experiment
                        Alchemist.Observation
                        Alchemist.Internal.Types

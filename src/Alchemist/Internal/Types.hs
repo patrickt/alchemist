@@ -10,6 +10,7 @@ module Alchemist.Internal.Types
 
 import Data.Text (Text)
 import Control.Exception (SomeException)
+import Data.Time.Clock
 
 data Experiment m a = Experiment
   { enabled :: m Bool,
@@ -17,13 +18,13 @@ data Experiment m a = Experiment
     candidates :: [Candidate m a],
     raised :: Text -> SomeException -> m a,
     name :: Text,
-    comparator :: Eq a => a -> a -> Bool
+    comparator :: Eq a => a -> a -> Bool,
     publish :: Result m a -> m ()
   }
 
 data Candidate m a = Candidate
   { action :: m a
-  , name :: m a
+  , name :: Text
   }
 
 data Result m a = Result
@@ -35,7 +36,7 @@ data Result m a = Result
   }
 
 data Observation m a = Observation
-  { duration :: Double,
+  { duration :: NominalDiffTime,
     exception :: Maybe SomeException,
     experiment :: Experiment m a,
     name :: Text,
