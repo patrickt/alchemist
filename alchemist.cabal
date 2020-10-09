@@ -21,7 +21,9 @@ source-repository head
   location:            https://github.com/patrickt/alchemist.git
 
 common common-options
-  build-depends:       base ^>= 4.13.0.0
+  build-depends:       base ^>= 4.14.0.0
+                     , text
+                     , random ^>= 1.2
 
   ghc-options:         -Wall
                        -Wcompat
@@ -44,15 +46,9 @@ library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     Alchemist
-
-executable alchemist
-  import:              common-options
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  build-depends:       alchemist
-  ghc-options:         -threaded
-                       -rtsopts
-                       -with-rtsopts=-N
+                       Alchemist.Experiment
+                       Alchemist.Observation
+                       Alchemist.Internal.Types
 
 test-suite alchemist-test
   import:              common-options
