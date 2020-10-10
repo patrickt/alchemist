@@ -14,35 +14,57 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Data.IORef
 
+
+countExecutions :: (Eq a, MonadIO m) => Alc.Experiment IO a -> m (a, Int)
+countExecutions runner = do
+  let io = liftIO
+  ref <- io (newIORef 0)
+  let counting = runner & Alc.reporting (const (modifyIORef ref succ))
+
+  res <- io . Alc.run $ counting
+  val <- io . readIORef $ ref
+  pure (res, val)
+
 prop_executesNoActionWithNoCandidates :: Property
 prop_executesNoActionWithNoCandidates = property do
-  ref <- liftIO (newIORef 0)
   x <- forAll (Gen.int (Range.linear 0 100))
 
-  let runner
-        = Alc.new "no actions" (pure x)
-        & Alc.reporting (const (modifyIORef ref succ))
+  let runner = Alc.new "no actions" (pure x)
 
-
-  e <- liftIO . Alc.run $ runner
-  x === e
-  amt <- liftIO $ readIORef ref
-  amt === (1 :: Int)
+  (val, amt) <- countExecutions runner
+  x === val
+  amt === 1
 
 prop_executesNoActionsWhenDisabled :: Property
 prop_executesNoActionsWhenDisabled = property do
-  ref <- liftIO (newIORef 0)
   x <- forAll (Gen.int (Range.linear 0 100))
 
   let runner
         = Alc.new "no actions" (pure x)
-        & Alc.reporting (const (modifyIORef ref succ))
         & Alc.runIf (pure False)
 
-  e <- liftIO . Alc.run $ runner
-  x === e
-  amt <- liftIO (readIORef ref)
-  amt === (0 :: Int)
+  (val, amt) <- countExecutions runner
+  x === val
+  amt === 0
+
+-- prop_executesNActionsForNMinusOneCandidates :: Property
+-- prop_executesNActionsForNMinusOneCandidates = property do
+--   len <- forAll (Gen.int (Range.linear 3 10))
+--   let values = replicate len (pure ())
+--   let runner = Alc.new "N actions" (pure ())
+
+--   let withAllTries = foldr Alc.try runner values -- chef_kissing_fingers.png
+--   (_, amt) <- countExecutions withAllTries
+--   amt === len
+
+prop_callsHandlerIO :: Property
+prop_callsHandlerIO = property $ do
+  let runner = Alc.new "example" (pure False)
+        & Alc.try (error "OH NO!")
+        & Alc.handling (\_ _ -> pure True)
+
+  res <- liftIO (Alc.run runner)
+  res === True
 
 tests :: IO Bool
 tests =
@@ -50,9 +72,3 @@ tests =
 
 main :: IO ()
 main = void tests
-
--- main :: IO ()
--- main = do
---   Alc.new "test" (putStrLn "Standard")
---     & Alc.try (putStrLn "Alternative")
---     & Alc.run

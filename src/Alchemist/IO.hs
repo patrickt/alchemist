@@ -6,6 +6,7 @@ module Alchemist.IO
   ( Experiment (..),
     new,
     try,
+    try',
     handling,
     reporting,
     runIf,
@@ -64,22 +65,6 @@ new n c =
       publish = const (pure ())
     }
 
--- | Add a new candidate action to the provided 'Experiment'.
--- When the resulting 'Experiment' is invoked, the runner
--- will execute the provided IO action and report the results
--- via the experiment's @publish@ function.
-try :: IO a -> Experiment IO a -> Experiment IO a
-try c e = e {candidates = Candidate c "experiment" : candidates e}
-
-handling :: (Text -> SomeException -> IO a) -> Experiment IO a -> Experiment IO a
-handling f e = e {raised = f}
-
-reporting :: (Result IO a -> IO ()) -> Experiment IO a -> Experiment IO a
-reporting f e = e {publish = f}
-
-runIf :: IO Bool -> Experiment IO a -> Experiment IO a
-runIf x e = e {enabled = x}
-
 execute :: Experiment IO a -> Candidate IO a -> IO (Observation IO a)
 execute e c = do
   start <- liftIO getCurrentTime
@@ -94,7 +79,7 @@ execute e c = do
       }
 
 -- | Run an 'Experiment' in the 'IO' monad.
-run :: Experiment IO a -> IO a
+run :: Eq a => Experiment IO a -> IO a
 run e = do
   on <- enabled e
   normal <- control e
@@ -103,7 +88,8 @@ run e = do
     else do
       shuffled <- permute (candidates e)
       datums <- traverse (execute e) shuffled
-      let res = Result datums normal [] []
+      let wrong = filter (\c -> either (const True) (/= normal) (value c) ) datums
+      let res = Result datums normal wrong
       publish e res
       if null datums
         then pure normal

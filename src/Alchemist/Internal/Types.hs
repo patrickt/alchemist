@@ -31,7 +31,6 @@ data Candidate m a = Candidate
 data Result m a = Result
   { observations :: [Observation m a],
     control :: a,
-    ignored :: [Observation m a],
     mismatched :: [Observation m a]
   }
 
