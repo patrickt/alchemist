@@ -28,19 +28,20 @@ try = try' "<candidate>"
 try' :: Text -> m a -> Experiment m a -> Experiment m a
 try' m c e = e {candidates = Candidate c m : candidates e}
 
--- | Set the exception handler for a given experiment. This will be
--- invoked when any exception occurs in IO.
+-- | Set the exception handler (the @raised@ field) for a given
+-- experiment. This will be invoked when any exception occurs in IO.
 handling :: (Text -> SomeException -> m a) -> Experiment m a -> Experiment m a
 handling f e = e {raised = f}
 
--- | Set the publish handler for a given experiment. When a given
--- candidate completes, its yielded value and timing statistics are
--- passed in a 'Result' to the provided function.
+-- | Set the publish handler (the @publish@ field) for a given
+-- experiment. When a given candidate completes, its yielded value and
+-- timing statistics are passed in a 'Result' to the provided
+-- function.
 reporting :: (Result m a -> m ()) -> Experiment m a -> Experiment m a
 reporting f e = e {publish = f}
 
--- | Conditionally enable or disable an experiment. An experiment that is
--- disabled will always return its control value and will not call its
--- publish function.
+-- | Conditionally enable or disable (via the @enabled@ field)an
+-- experiment. An experiment that is disabled will always return its
+-- control value and will not call its publish function.
 runIf :: m Bool -> Experiment m a -> Experiment m a
 runIf x e = e {enabled = x}

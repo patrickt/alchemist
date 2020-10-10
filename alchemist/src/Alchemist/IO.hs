@@ -3,8 +3,12 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Alchemist.IO
-  ( Experiment (..),
+  (
     new,
+    run,
+
+    -- * Re-exports
+    Experiment (..),
     try,
     try',
     handling,
@@ -12,7 +16,6 @@ module Alchemist.IO
     runIf,
     run,
 
-    -- * Re-exports
     (&),
   )
 where
