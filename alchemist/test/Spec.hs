@@ -17,7 +17,7 @@ import Hedgehog.Range qualified as Range
 import Data.IORef
 
 
-countExecutions :: (Show a, Eq a, MonadIO m) => Alc.Experiment IO a -> m (a, Int)
+countExecutions :: MonadIO m => Alc.ExperimentIO a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
@@ -49,9 +49,24 @@ prop_executesNoActionsWhenDisabled = property do
   x === val
   amt === 0
 
+prop_runsAllTryBlocks :: Property
+prop_runsAllTryBlocks = property do
+  let io = liftIO
+  ref <- io (newIORef 0)
+  len <- forAll (Gen.int (Range.linear 1 10))
+
+  let values = replicate len (modifyIORef ref succ)
+  let runner = Alc.new "N actions" (liftIO (pure ()))
+
+  let assembled = foldr Alc.try runner values
+
+  io . Alc.run $ assembled
+  amt <- io . readIORef $ ref
+  amt === len
+
 prop_executesNActionsForNMinusOneInvocations :: Property
 prop_executesNActionsForNMinusOneInvocations = property do
-  len <- forAll (Gen.int (Range.linear 9 10))
+  len <- forAll (Gen.int (Range.linear 1 10))
   let values = replicate len ()
   let runner = Alc.new "N actions" (liftIO (pure ()))
 

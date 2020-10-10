@@ -1,29 +1,34 @@
 module Control.Effect.Alchemist.Lift
   ( new,
+    run,
   )
 where
 
-import Control.Effect.Exception
+import Control.Effect.Exception hiding (run)
+import Alchemist.Experiment
+import Data.Text (Text)
 
 new ::
   (Eq a, Has (Lift IO) sig m) =>
   Text ->
   IO a ->
-  Experiment m a
+  Experiment SomeException m a
 new n c =
   Experiment
     { enabled = pure True,
-      control = liftIO c,
+      control = sendM c,
       candidates = [],
-      raised = const Eff.throwIO,
+      raised = const throwIO,
+      name = n,
       comparator = (==),
       publish = const (pure ())
     }
 
 -- Note that this function says nothing about any @Error@ constraints;
--- any errors thrown with 'throwError' will bubble outward of
+-- any errors thrown with 'throwError' will bubble up to any enclosing
+-- scope.
 run ::
   (Has (Lift IO) sig m) =>
-  Experiment m a ->
+  Experiment e m a ->
   m a
 run = undefined

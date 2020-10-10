@@ -43,7 +43,7 @@ import Data.Time.Clock
 --
 
 
-data Experiment m a = Experiment
+data Experiment e m a = Experiment
   { candidates :: [Candidate m a],
      -- ^ Each experiment has zero ore more _candidates_. When an experiment is run, each candidate's action is run and compared with the control.
     comparator :: a -> a -> Bool,
@@ -51,8 +51,8 @@ data Experiment m a = Experiment
     control :: m a,
     enabled :: m Bool,
     name :: Text,
-    publish :: Result m a -> m (),
-    raised :: Text -> SomeException -> m a
+    publish :: Result e m a -> m (),
+    raised :: Text -> e -> m a
   }
 
 data Candidate m a = Candidate
@@ -60,14 +60,14 @@ data Candidate m a = Candidate
     name :: Text
   }
 
-data Result m a = Result
-  { observations :: [Observation m a],
+data Result e m a = Result
+  { observations :: [Observation e m a],
     control :: a,
-    mismatched :: [Observation m a]
+    mismatched :: [Observation e m a]
   }
 
-data Observation m a = Observation
+data Observation e m a = Observation
   { duration :: NominalDiffTime,
-    experiment :: Experiment m a,
-    value :: Either SomeException a
+    experiment :: Experiment e m a,
+    value :: Either e a
   }

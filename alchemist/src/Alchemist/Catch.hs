@@ -9,6 +9,11 @@ import Alchemist.Experiment
 import Control.Monad.Catch qualified as Exc
 import Data.Text (Text)
 
+-- Note that if you use this in conjunction with @MonadError@,
+-- any errors thrown by @throwError@ will bubble up to their enclosing
+-- scope rather than being caught by a @run@ function. This interface only
+-- catches GHC's exceptions hierarchy. For an interface that uses @MonadError@,
+-- consult @alchemist-mtl@'s @Control.Monad.Error.Alchemist@.
 new :: (Exc.MonadCatch m) => Text -> m a -> Experiment m a
 new n c =
   Experiment

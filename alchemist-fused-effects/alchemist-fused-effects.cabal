@@ -21,8 +21,9 @@ source-repository head
   location:            https://github.com/patrickt/alchemist-fused-effects.git
 
 common common-options
-  build-depends:       base ^>= 4.13.0.0
+  build-depends:       base ^>= 4.14.0.0
                      , alchemist
+                     , text
                      , fused-effects
                      , fused-effects-exceptions
 
@@ -46,16 +47,8 @@ common common-options
 library
   import:              common-options
   hs-source-dirs:      src
-  exposed-modules:     AlchemistFusedEffects
-
-executable alchemist-fused-effects
-  import:              common-options
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  build-depends:       alchemist-fused-effects
-  ghc-options:         -threaded
-                       -rtsopts
-                       -with-rtsopts=-N
+  exposed-modules:     Control.Effect.Alchemist.Error
+                       Control.Effect.Alchemist.Lift
 
 test-suite alchemist-fused-effects-test
   import:              common-options
