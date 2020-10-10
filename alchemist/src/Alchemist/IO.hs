@@ -3,19 +3,11 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Alchemist.IO
-  (
-    new,
+  ( new,
     run,
 
     -- * Re-exports
-    Experiment (..),
-    try,
-    try',
-    handling,
-    reporting,
-    runIf,
-    run,
-
+    module Alchemist.Experiment,
     (&),
   )
 where
@@ -34,25 +26,9 @@ import Data.Time.Clock
 import System.Random
 
 -- | Creates an 'Experiment' suitable for running an action in 'IO'.
--- The resulting 'Experiment' has its fields set as follows:
---
--- * @enabled@: 'pure' 'True'
--- * @comparator@: '=='
--- * @control@: provided
--- * @name@: provided
--- * @publish@: 'pure' '()'
--- * @raised@: 'Control.Exception.throw'
---
--- To add candidate actions, use the 'try' combinator:
---
--- @
---   res <- new "sample" (putStrLn "Sample value")
---     & try (putStrLn "One alternative")
---     & try (putStrLn "Another alternative")
---     & run
--- @
 new ::
-  -- | the name of this experiement
+  (Eq a) =>
+  -- | the name of this experiment
   Text ->
   -- | the control (default) action to run
   IO a ->
@@ -82,7 +58,7 @@ execute e c = do
       }
 
 -- | Run an 'Experiment' in the 'IO' monad.
-run :: Eq a => Experiment IO a -> IO a
+run :: Experiment IO a -> IO a
 run e = do
   on <- enabled e
   normal <- control e
@@ -91,7 +67,8 @@ run e = do
     else do
       shuffled <- permute (candidates e)
       datums <- traverse (execute e) shuffled
-      let wrong = filter (\c -> either (const True) (/= normal) (value c) ) datums
+      let inquire c = either (const True) (not . comparator e normal) (value c)
+      let wrong = filter inquire datums
       let res = Result datums normal wrong
       publish e res
       if null datums
