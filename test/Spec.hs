@@ -7,15 +7,17 @@ module Main (main) where
 
 import Alchemist.IO qualified as Alc
 import Control.Monad
+import Data.Foldable
 import Control.Monad.IO.Class
 import Data.Function
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
+import Control.Exception (throwIO)
 import Hedgehog.Range qualified as Range
 import Data.IORef
 
 
-countExecutions :: (Eq a, MonadIO m) => Alc.Experiment IO a -> m (a, Int)
+countExecutions :: (Show a, Eq a, MonadIO m) => Alc.Experiment IO a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
@@ -47,20 +49,25 @@ prop_executesNoActionsWhenDisabled = property do
   x === val
   amt === 0
 
--- prop_executesNActionsForNMinusOneCandidates :: Property
--- prop_executesNActionsForNMinusOneCandidates = property do
---   len <- forAll (Gen.int (Range.linear 3 10))
---   let values = replicate len (pure ())
---   let runner = Alc.new "N actions" (pure ())
+prop_executesNActionsForNMinusOneInvocations :: Property
+prop_executesNActionsForNMinusOneInvocations = property do
+  len <- forAll (Gen.int (Range.linear 9 10))
+  let values = replicate len ()
+  let runner = Alc.new "N actions" (liftIO (pure ()))
 
---   let withAllTries = foldr Alc.try runner values -- chef_kissing_fingers.png
---   (_, amt) <- countExecutions withAllTries
---   amt === len
+  let io = liftIO
+  ref <- io (newIORef 0)
+  let counting = runner & Alc.reporting (const (modifyIORef ref succ))
+
+  for_ values (\_ -> io . Alc.run $ counting)
+  amt <- io . readIORef $ ref
+  amt === len
+  annotateShow (length values)
 
 prop_callsHandlerIO :: Property
 prop_callsHandlerIO = property $ do
   let runner = Alc.new "example" (pure False)
-        & Alc.try (error "OH NO!")
+        & Alc.try (throwIO (userError "Oh no!"))
         & Alc.handling (\_ _ -> pure True)
 
   res <- liftIO (Alc.run runner)
