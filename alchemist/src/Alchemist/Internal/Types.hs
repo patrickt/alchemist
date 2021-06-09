@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
+{-# LANGUAGE KindSignatures #-}
 module Alchemist.Internal.Types
   ( Experiment (..),
     Candidate (..),
@@ -10,6 +11,7 @@ where
 
 import Data.Text (Text)
 import Data.Time.Clock
+import Data.Kind (Type)
 
 -- | A representation of an experiment to be run.
 -- Though you can create these values manually, it may be more
@@ -39,7 +41,7 @@ import Data.Time.Clock
 -- * @name@: provided
 -- * @publish@: 'pure' '()'
 -- * @raised@: 'Control.Exception.throw'
-data Experiment e m a = Experiment
+data Experiment (m :: Type -> Type) e a = Experiment
   { -- | Every 'Experiment' has a /control/ value, which represents the original or standard behavior of the
     -- code in question. When an 'enabled' experiment is run, its 'control' is always executed, along with
     -- zero or more (depending on randomness) of the 'candidates'.
@@ -56,23 +58,23 @@ data Experiment e m a = Experiment
     enabled :: m Bool,
     -- | Every experiment is associated with a textual identifier. These names should be nonempty and unique to a given experiment.
     name :: Text,
-    publish :: Result e m a -> m (),
+    publish :: Result m e a -> m (),
     raised :: Text -> e -> m a
   }
 
-data Candidate m a = Candidate
+data Candidate (m :: Type -> Type) a = Candidate
   { action :: m a,
     name :: Text
   }
 
-data Result e m a = Result
-  { observations :: [Observation e m a],
+data Result (m :: Type -> Type) e a = Result
+  { observations :: [Observation m e a],
     control :: a,
-    mismatched :: [Observation e m a]
+    mismatched :: [Observation m e a]
   }
 
-data Observation e m a = Observation
+data Observation (m :: Type -> Type) e a = Observation
   { duration :: NominalDiffTime,
-    experiment :: Experiment e m a,
+    experiment :: Experiment m e a,
     value :: Either e a
   }

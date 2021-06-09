@@ -13,7 +13,7 @@ new ::
   Text ->
   -- | the control (default) action to run
   m a ->
-  Experiment e m a
+  Experiment m e a
 new n c =
   Experiment
     { enabled = pure True,

@@ -12,7 +12,7 @@ new ::
   (Eq a, Has (Lift IO) sig m) =>
   Text ->
   IO a ->
-  Experiment SomeException m a
+  Experiment m SomeException a
 new n c =
   Experiment
     { enabled = pure True,
@@ -29,6 +29,6 @@ new n c =
 -- scope.
 run ::
   (Has (Lift IO) sig m) =>
-  Experiment e m a ->
+  Experiment m e a ->
   m a
 run = undefined

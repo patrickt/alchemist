@@ -26,7 +26,7 @@ import Data.Text (Text)
 import Data.Time.Clock
 import Control.Monad (filterM)
 
-type ExperimentIO = Experiment SomeException IO
+type ExperimentIO = Experiment IO SomeException
 
 -- | Creates an 'Experiment' suitable for running an action in 'IO'. By default,
 -- this experiment is 'enabled', has no 'candidates', and rethrows exceptions
@@ -49,7 +49,7 @@ new n c =
       publish = const (pure ())
     }
 
-execute :: ExperimentIO a -> Candidate IO a -> IO (Observation SomeException IO a)
+execute :: ExperimentIO a -> Candidate IO a -> IO (Observation IO SomeException a)
 execute e c = do
   start <- liftIO getCurrentTime
   val <- Exc.try (action c)
