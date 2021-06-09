@@ -21,6 +21,6 @@ new n c =
       candidates = [],
       raised = const throwError,
       name = n,
-      comparator = (==),
+      comparator = \x y -> pure (x == y),
       publish = const (pure ())
     }

@@ -24,7 +24,7 @@ import Control.Monad.IO.Class
 import Data.Function ((&))
 import Data.Text (Text)
 import Data.Time.Clock
-import System.Random
+import Control.Monad (filterM)
 
 type ExperimentIO = Experiment SomeException IO
 
@@ -43,7 +43,7 @@ new n c =
       candidates = [],
       raised = const Exc.throw,
       name = n,
-      comparator = (==),
+      comparator = \x y -> pure (x == y),
       publish = const (pure ())
     }
 
@@ -70,8 +70,10 @@ run e = do
     else do
       shuffled <- permute (candidates e)
       datums <- traverse (execute e) shuffled
-      let inquire c = either (const True) (not . comparator e normal) (value c)
-      let wrong = filter inquire datums
+      let inquire c = case value c of
+            Left _ -> pure True
+            Right ok -> not <$> comparator e ok normal
+      wrong <- filterM inquire datums
       let res = Result datums normal wrong
       publish e res
       if null datums

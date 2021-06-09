@@ -8,7 +8,6 @@ module Alchemist.Internal.Types
   )
 where
 
-import Control.Exception (SomeException)
 import Data.Text (Text)
 import Data.Time.Clock
 
@@ -40,15 +39,13 @@ import Data.Time.Clock
 -- * @name@: provided
 -- * @publish@: 'pure' '()'
 -- * @raised@: 'Control.Exception.throw'
---
-
-
 data Experiment e m a = Experiment
-  { candidates :: [Candidate m a],
-     -- ^ Each experiment has zero ore more _candidates_. When an experiment is run, each candidate's action is run and compared with the control.
-    comparator :: a -> a -> Bool,
-     -- ^ Determines whether the
+  { -- | Every experiment has a _control_ value, which represents the original or standard behavior of the code in question. When an experiment
     control :: m a,
+    -- | Each experiment has zero ore more _candidates_, representing new control paths that we may want to evaluate. If a given candidate is executed, its result will be compared (using 'comparator') with the result of executing the 'control'.
+    candidates :: [Candidate m a],
+    -- | This is used to compare the result of candidate execution with the control. This is usually the '==' function in a monadic context, but it can be overridden should you require more fine-grained behavior.
+    comparator :: a -> a -> m Bool,
     enabled :: m Bool,
     name :: Text,
     publish :: Result e m a -> m (),
