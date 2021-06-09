@@ -36,9 +36,7 @@ to all these situations. However, there are certain important facts to remember:
    a problem in your existing code that you should address before running any experiments.
 -}
 module Alchemist
-  ( module Alchemist.IO
-  , Experiment (..)
+  ( Experiment (..)
   ) where
 
 import Alchemist.Internal.Types
-import Alchemist.IO

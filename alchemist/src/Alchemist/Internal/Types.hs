@@ -13,10 +13,9 @@ import Data.Text (Text)
 import Data.Time.Clock
 import Data.Kind (Type)
 
--- | A representation of an experiment to be run.
--- Though you can create these values manually, it may be more
--- convenient to use the combinators present in modules like "Alchemist.IO"
--- and "Alchemist.Catch", which are geared towards common monad setups.
+-- | A representation of an experiment to be run. Though you can create these values manually, it may be more
+-- convenient to use the combinators present in modules like "Alchemist.IO" and "Alchemist.Catch", which are
+-- geared towards common monads.
 --
 -- To add candidate actions, use the 'try' combinator:
 --
@@ -31,6 +30,9 @@ import Data.Kind (Type)
 --
 -- - "Alchemist.Catch"
 -- - "Alchemist.IO"
+--
+-- These modules reexport all the definitions that you'll need to use 'Experiment' values, though you may want
+-- to import them @qualified@ to avoid name collisions.
 data Experiment (m :: Type -> Type) e a = Experiment
   { -- | Every 'Experiment' has a /control/ value, which represents the original or standard behavior of the
     -- code in question. When an 'enabled' experiment is run, its 'control' is always executed, along with

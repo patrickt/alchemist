@@ -21,9 +21,9 @@ countExecutions :: MonadIO m => Alc.ExperimentIO a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
-  let counting = runner & Alc.reporting (const (modifyIORef ref succ))
+  let incr _ = modifyIORef ref succ
 
-  res <- io . Alc.run $ counting
+  res <- io . Alc.runReporting incr $ runner
   val <- io . readIORef $ ref
   pure (res, val)
 

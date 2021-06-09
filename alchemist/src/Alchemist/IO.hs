@@ -5,6 +5,7 @@
 module Alchemist.IO
   ( new,
     run,
+    runReporting,
     ExperimentIO,
 
     -- * Re-exports
@@ -20,11 +21,11 @@ import Alchemist.Observation
 import Alchemist.Result hiding (control)
 import Control.Exception (SomeException)
 import Control.Exception qualified as Exc
+import Control.Monad (filterM)
 import Control.Monad.IO.Class
 import Data.Function ((&))
 import Data.Text (Text)
 import Data.Time.Clock
-import Control.Monad (filterM)
 
 type ExperimentIO = Experiment IO SomeException
 
@@ -49,7 +50,7 @@ new n c =
       publish = const (pure ())
     }
 
-execute :: ExperimentIO a -> Candidate IO a -> IO (Observation IO SomeException a)
+execute :: (Exc.Exception e) => Experiment IO e a -> Candidate IO a -> IO (Observation IO e a)
 execute e c = do
   start <- liftIO getCurrentTime
   val <- Exc.try (action c)
@@ -62,8 +63,24 @@ execute e c = do
         value = val
       }
 
+runReporting :: (Exc.Exception e) => (Result IO e a -> IO ()) -> Experiment IO e a -> IO a
+runReporting p e = do
+  on <- enabled e
+  normal <- control e
+  if not on
+    then pure normal
+    else do
+      shuffled <- permute (candidates e)
+      datums <- traverse (execute e) shuffled
+      let inquire c = case value c of
+            Left _ -> pure True
+            Right ok -> not <$> comparator e ok normal
+      wrong <- filterM inquire datums
+      let res = Result datums normal wrong
+      normal <$ p res
+
 -- | Run an 'Experiment' in the 'IO' monad.
-run :: ExperimentIO a -> IO a
+run :: (Exc.Exception e) => Experiment IO e a -> IO a
 run e = do
   on <- enabled e
   normal <- control e
