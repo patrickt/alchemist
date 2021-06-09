@@ -28,7 +28,9 @@ import Control.Monad (filterM)
 
 type ExperimentIO = Experiment SomeException IO
 
--- | Creates an 'Experiment' suitable for running an action in 'IO'.
+-- | Creates an 'Experiment' suitable for running an action in 'IO'. By default,
+-- this experiment is 'enabled', has no 'candidates', and rethrows exceptions
+-- encountered in its 'control'.
 new ::
   (Eq a) =>
   -- | the name of this experiment

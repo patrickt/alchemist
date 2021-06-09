@@ -40,13 +40,21 @@ import Data.Time.Clock
 -- * @publish@: 'pure' '()'
 -- * @raised@: 'Control.Exception.throw'
 data Experiment e m a = Experiment
-  { -- | Every experiment has a _control_ value, which represents the original or standard behavior of the code in question. When an experiment
+  { -- | Every 'Experiment' has a /control/ value, which represents the original or standard behavior of the
+    -- code in question. When an 'enabled' experiment is run, its 'control' is always executed, along with
+    -- zero or more (depending on randomness) of the 'candidates'.
     control :: m a,
-    -- | Each experiment has zero ore more _candidates_, representing new control paths that we may want to evaluate. If a given candidate is executed, its result will be compared (using 'comparator') with the result of executing the 'control'.
+    -- | Each experiment has zero ore more /candidates/, representing new control paths that we may want to
+    -- evaluate. If a given candidate is executed, its result will be compared (using 'comparator') with the
+    -- result of executing the 'control'.
     candidates :: [Candidate m a],
-    -- | This is used to compare the result of candidate execution with the control. This is usually the '==' function in a monadic context, but it can be overridden should you require more fine-grained behavior.
+    -- | This is used to compare the result of candidate execution with the control. This is usually the '=='
+    -- function in a monadic context, but it can be overridden should you require more fine-grained behavior.
     comparator :: a -> a -> m Bool,
+    -- | This determines whether the candidates in an experiment should be run at all. A disabled experiment
+    -- will run only its control. This defaults to @pure True@.
     enabled :: m Bool,
+    -- | Every experiment is associated with a textual identifier. These names should be nonempty and unique to a given experiment.
     name :: Text,
     publish :: Result e m a -> m (),
     raised :: Text -> e -> m a
