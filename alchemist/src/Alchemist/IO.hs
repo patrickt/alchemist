@@ -6,7 +6,6 @@ module Alchemist.IO
   ( new,
     run,
     runReporting,
-    ExperimentIO,
 
     -- * Re-exports
     module Alchemist.Experiment,
@@ -27,18 +26,17 @@ import Data.Function ((&))
 import Data.Text (Text)
 import Data.Time.Clock
 
-type ExperimentIO = Experiment IO SomeException
-
 -- | Creates an 'Experiment' suitable for running an action in 'IO'. By default,
 -- this experiment is 'enabled', has no 'candidates', and rethrows exceptions
 -- encountered in its 'control'.
 new ::
-  (Eq a) =>
+  forall e a .
+  (Exc.Exception e, Eq a) =>
   -- | the name of this experiment
   Text ->
   -- | the control (default) action to run
   IO a ->
-  ExperimentIO a
+  Experiment IO e a
 new n c =
   Experiment
     { enabled = pure True,

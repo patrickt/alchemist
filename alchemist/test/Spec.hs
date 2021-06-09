@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -12,12 +13,12 @@ import Control.Monad.IO.Class
 import Data.Function
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
-import Control.Exception (throwIO)
+import Control.Exception (throwIO, SomeException)
 import Hedgehog.Range qualified as Range
 import Data.IORef
 
 
-countExecutions :: MonadIO m => Alc.ExperimentIO a -> m (a, Int)
+countExecutions :: MonadIO m => Alc.Experiment IO SomeException a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
@@ -60,7 +61,7 @@ prop_runsAllTryBlocks = property do
 
   let assembled = foldr Alc.try runner values
 
-  io . Alc.run $ assembled
+  io . Alc.run @SomeException $ assembled
   amt <- io . readIORef $ ref
   amt === len
 
@@ -74,7 +75,7 @@ prop_executesNActionsForNMinusOneInvocations = property do
   ref <- io (newIORef 0)
   let counting = runner & Alc.reporting (const (modifyIORef ref succ))
 
-  for_ values (\_ -> io . Alc.run $ counting)
+  for_ values (\_ -> io . Alc.run @SomeException $ counting)
   amt <- io . readIORef $ ref
   amt === len
   annotateShow (length values)
@@ -85,7 +86,7 @@ prop_callsHandlerIO = property $ do
         & Alc.try (throwIO (userError "Oh no!"))
         & Alc.handling (\_ _ -> pure True)
 
-  res <- liftIO (Alc.run runner)
+  res <- liftIO (Alc.run @SomeException runner)
   res === True
 
 tests :: IO Bool
