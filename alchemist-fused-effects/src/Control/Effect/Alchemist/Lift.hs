@@ -20,8 +20,7 @@ new n c =
       candidates = [],
       raised = const throwIO,
       name = n,
-      comparator = \x y -> pure (x == y),
-      publish = const (pure ())
+      comparator = \x y -> pure (x == y)
     }
 
 -- Note that this function says nothing about any @Error@ constraints;

@@ -22,6 +22,5 @@ new n c =
       candidates = [],
       raised = const Exc.throwM,
       name = n,
-      comparator = \x y -> pure (x == y),
-      publish = const (pure ())
+      comparator = \x y -> pure (x == y)
     }

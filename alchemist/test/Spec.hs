@@ -61,7 +61,7 @@ prop_runsAllTryBlocks = property do
 
   let assembled = foldr Alc.try runner values
 
-  io . Alc.run @SomeException $ assembled
+  void . io . Alc.run @SomeException $ assembled
   amt <- io . readIORef $ ref
   amt === len
 
@@ -73,9 +73,9 @@ prop_executesNActionsForNMinusOneInvocations = property do
 
   let io = liftIO
   ref <- io (newIORef 0)
-  let counting = runner & Alc.reporting (const (modifyIORef ref succ))
+  let incr = const (modifyIORef ref succ)
 
-  for_ values (\_ -> io . Alc.run @SomeException $ counting)
+  for_ values (\_ -> io . Alc.runReporting @SomeException incr $ runner)
   amt <- io . readIORef $ ref
   amt === len
   annotateShow (length values)
@@ -87,7 +87,7 @@ prop_callsHandlerIO = property $ do
         & Alc.handling (\_ _ -> pure True)
 
   res <- liftIO (Alc.run @SomeException runner)
-  res === True
+  fst res === True
 
 tests :: IO Bool
 tests =

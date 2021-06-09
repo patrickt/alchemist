@@ -2,7 +2,7 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE KindSignatures #-}
 module Alchemist.Internal.Types
-  ( Experiment (Experiment, control, candidates, comparator, enabled, name, publish, raised),
+  ( Experiment (Experiment, control, candidates, comparator, enabled, name, raised),
     Candidate (..),
     Result (..),
     Observation (..),
@@ -51,7 +51,6 @@ data Experiment (m :: Type -> Type) e a = Experiment
     enabled :: m Bool,
     -- | Every experiment is associated with a textual identifier. These names should be nonempty and unique to a given experiment.
     name :: Text,
-    publish :: Result m e a -> m (),
     raised :: Text -> e -> m a
   }
 

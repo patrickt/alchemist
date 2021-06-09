@@ -8,7 +8,6 @@ module Alchemist.Experiment
     try,
     try',
     handling,
-    reporting,
     runIf,
   )
 where
@@ -32,13 +31,6 @@ try' m c e = e {candidates = Candidate c m : candidates e}
 -- experiment. This will be invoked when any exception occurs in IO.
 handling :: (Text -> e -> m a) -> Experiment m e a -> Experiment m e a
 handling f e = e {raised = f}
-
--- | Set the publish handler (the @publish@ field) for a given
--- experiment. When a given candidate completes, its yielded value and
--- timing statistics are passed in a 'Result' to the provided
--- function.
-reporting :: (Result m e a -> m ()) -> Experiment m e a -> Experiment m e a
-reporting f e = e {publish = f}
 
 -- | Conditionally enable or disable (via the @enabled@ field)an
 -- experiment. An experiment that is disabled will always return its

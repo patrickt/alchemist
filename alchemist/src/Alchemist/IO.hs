@@ -44,8 +44,7 @@ new n c =
       candidates = [],
       raised = const Exc.throw,
       name = n,
-      comparator = \x y -> pure (x == y),
-      publish = const (pure ())
+      comparator = \x y -> pure (x == y)
     }
 
 execute :: (Exc.Exception e) => Experiment IO e a -> Candidate IO a -> IO (Observation IO e a)
@@ -78,12 +77,12 @@ runReporting p e = do
       normal <$ p res
 
 -- | Run an 'Experiment' in the 'IO' monad.
-run :: (Exc.Exception e) => Experiment IO e a -> IO a
+run :: (Exc.Exception e) => Experiment IO e a -> IO (a, Result IO e a)
 run e = do
   on <- enabled e
   normal <- control e
   if not on
-    then pure normal
+    then pure (normal, Result [] normal [])
     else do
       shuffled <- permute (candidates e)
       datums <- traverse (execute e) shuffled
@@ -92,7 +91,4 @@ run e = do
             Right ok -> not <$> comparator e ok normal
       wrong <- filterM inquire datums
       let res = Result datums normal wrong
-      publish e res
-      if null datums
-        then pure normal
-        else either (raised e (name e)) pure (value (head datums))
+      pure (normal, res)
