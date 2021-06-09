@@ -1,8 +1,8 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-
+{-# OPTIONS_HADDOCK not-home #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE KindSignatures #-}
 module Alchemist.Internal.Types
-  ( Experiment (..),
+  ( Experiment (Experiment, control, candidates, comparator, enabled, name, publish, raised),
     Candidate (..),
     Result (..),
     Observation (..),
@@ -15,8 +15,8 @@ import Data.Kind (Type)
 
 -- | A representation of an experiment to be run.
 -- Though you can create these values manually, it may be more
--- convenient to use the combinators present in modules like 'Alchemist.IO'
--- and 'Alchemist.Catch', which are geared towards common monad setups.
+-- convenient to use the combinators present in modules like "Alchemist.IO"
+-- and "Alchemist.Catch", which are geared towards common monad setups.
 --
 -- To add candidate actions, use the 'try' combinator:
 --
@@ -28,19 +28,9 @@ import Data.Kind (Type)
 -- @
 --
 -- To run an experiment, use one of the modules that discharges them to a given monad:
--- - Alchemist.Catch
--- - Alchemist.IO
 --
--- Each of these modules contains a @new@ function that serves as a
--- smart constructor for a given monad's 'Experiment' type. By
--- default, the returned experiment has its fields set as follows:
---
--- * @enabled@: 'pure' 'True'
--- * @comparator@: '=='
--- * @control@: provided
--- * @name@: provided
--- * @publish@: 'pure' '()'
--- * @raised@: 'Control.Exception.throw'
+-- - "Alchemist.Catch"
+-- - "Alchemist.IO"
 data Experiment (m :: Type -> Type) e a = Experiment
   { -- | Every 'Experiment' has a /control/ value, which represents the original or standard behavior of the
     -- code in question. When an 'enabled' experiment is run, its 'control' is always executed, along with
@@ -48,7 +38,8 @@ data Experiment (m :: Type -> Type) e a = Experiment
     control :: m a,
     -- | Each experiment has zero ore more /candidates/, representing new control paths that we may want to
     -- evaluate. If a given candidate is executed, its result will be compared (using 'comparator') with the
-    -- result of executing the 'control'.
+    -- result of executing the 'control', and information about that candidate will be recorded in a given
+    -- 'Observation'.
     candidates :: [Candidate m a],
     -- | This is used to compare the result of candidate execution with the control. This is usually the '=='
     -- function in a monadic context, but it can be overridden should you require more fine-grained behavior.
@@ -64,12 +55,12 @@ data Experiment (m :: Type -> Type) e a = Experiment
 
 data Candidate (m :: Type -> Type) a = Candidate
   { action :: m a,
-    name :: Text
+    name' :: Text
   }
 
 data Result (m :: Type -> Type) e a = Result
   { observations :: [Observation m e a],
-    control :: a,
+    control' :: a,
     mismatched :: [Observation m e a]
   }
 

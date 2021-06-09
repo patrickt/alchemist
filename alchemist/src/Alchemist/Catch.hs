@@ -14,14 +14,14 @@ import Data.Text (Text)
 -- scope rather than being caught by a @run@ function. This interface only
 -- catches GHC's exceptions hierarchy. For an interface that uses @MonadError@,
 -- consult @alchemist-mtl@'s @Control.Monad.Error.Alchemist@.
-new :: (Exc.MonadCatch m) => Text -> m a -> Experiment m a
+new :: (Exc.MonadCatch m, Exc.Exception e, Eq a) => Text -> m a -> Experiment m e a
 new n c =
   Experiment
     { enabled = pure True,
       control = c,
-      candidates = []
+      candidates = [],
       raised = const Exc.throwM,
       name = n,
-      comparator = (==),
+      comparator = \x y -> pure (x == y),
       publish = const (pure ())
     }

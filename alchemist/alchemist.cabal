@@ -49,6 +49,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Alchemist
                        Alchemist.Candidate
+                       Alchemist.Catch
                        Alchemist.IO
                        Alchemist.Experiment
                        Alchemist.Observation
