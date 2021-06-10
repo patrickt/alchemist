@@ -5,32 +5,27 @@ module Alchemist.Experiment
   ( Experiment (..),
 
     -- * Fluent constructors
-    try,
-    try',
-    handling,
+    candidate,
+    reportingWith,
     runIf,
   )
 where
 
-import Alchemist.Internal.Types (Experiment (..), Result, Candidate (..))
-import Control.Exception (SomeException)
 import Data.Text (Text)
+import Alchemist.Internal.Types
 
 -- | Add a new candidate action to the provided 'Experiment', using a
 -- default name (@<experiment>@). When the resulting 'Experiment' is
 -- invoked, the runner will execute the provided m action and report
--- the results via the experiment's @publish@ function.
-try :: m a -> Experiment m e a -> Experiment m e a
-try = try' "<candidate>"
+-- the results via the
+candidate :: Text -> m a -> Experiment m e a -> Experiment m e a
+candidate m c e = e {candidates = Candidate c m : candidates e}
 
--- | As 'try', but taking an argument to name the candidate action.
-try' :: Text -> m a -> Experiment m e a -> Experiment m e a
-try' m c e = e {candidates = Candidate c m : candidates e}
-
--- | Set the exception handler (the @raised@ field) for a given
--- experiment. This will be invoked when any exception occurs in IO.
-handling :: (Text -> e -> m a) -> Experiment m e a -> Experiment m e a
-handling f e = e {raised = f}
+-- | Defines the reporting function that a given experiment should use
+-- to record or log information about the result of executing its
+-- candidates.
+reportingWith :: (Result m e a -> m ()) -> Experiment m e a -> Experiment m e a
+reportingWith f e = e { report = f }
 
 -- | Conditionally enable or disable (via the @enabled@ field)an
 -- experiment. An experiment that is disabled will always return its

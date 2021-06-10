@@ -2,10 +2,7 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE KindSignatures #-}
 module Alchemist.Internal.Types
-  ( Experiment (Experiment, control, candidates, comparator, enabled, name, raised),
-    Candidate (..),
-    Result (..),
-    Observation (..),
+  ( module Alchemist.Internal.Types
   )
 where
 
@@ -51,7 +48,11 @@ data Experiment (m :: Type -> Type) e a = Experiment
     enabled :: m Bool,
     -- | Every experiment is associated with a textual identifier. These names should be nonempty and unique to a given experiment.
     name :: Text,
-    raised :: Text -> e -> m a
+    -- | Experiments proactively handle errors that occur during their execution. This function describes
+    -- how the given monad should try to run a given candidate. One example valid signature is "Control.Exception.try".
+    attempt :: m a -> m (Either e a),
+    -- | Experiments can report
+    report :: Result m e a -> m ()
   }
 
 data Candidate (m :: Type -> Type) a = Candidate
@@ -70,3 +71,6 @@ data Observation (m :: Type -> Type) e a = Observation
     experiment :: Experiment m e a,
     value :: Either e a
   }
+
+attemptEither :: Either e a -> Either e (Either e a)
+attemptEither = Right

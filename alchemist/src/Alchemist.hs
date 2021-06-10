@@ -32,11 +32,14 @@ the built-in @exceptions@ library can use 'Control.Monad.Catch.throwM', and effe
 constructs like @MonadError@ or a @Throw@ effect. The 'Experiment' type aims to be generalizable
 to all these situations. However, there are certain important facts to remember:
 
-1. Errors encountered when running an experiment's 'control' are never handled, as this indicates
+1. Errors encountered when running an experiment's 'Alchemist.Experiment.control' are thrown, as this indicates
    a problem in your existing code that you should address before running any experiments.
+2. Consider carefully your desired behavior when using both error types (like 'Maybe' or 'Either' 'String') and exception types (of the sort thrown by 'Control.Exception.throw' or 'Control.Monad.Catch.throwM'). You can always override the function used to catch errors by assigning
+
 -}
 module Alchemist
   ( Experiment (..)
+  , candidate
   ) where
 
-import Alchemist.Internal.Types
+import Alchemist.Experiment

@@ -6,11 +6,10 @@
 
 module Main (main) where
 
-import Alchemist.IO qualified as Alc
+import Alchemist.IO
 import Control.Monad
 import Data.Foldable
 import Control.Monad.IO.Class
-import Data.Function
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Control.Exception (throwIO, SomeException)
@@ -18,13 +17,13 @@ import Hedgehog.Range qualified as Range
 import Data.IORef
 
 
-countExecutions :: MonadIO m => Alc.Experiment IO SomeException a -> m (a, Int)
+countExecutions :: MonadIO m => Experiment IO SomeException a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
-  let incr _ = modifyIORef ref succ
+  let runner' = reportingWith (const (modifyIORef ref succ)) runner
 
-  res <- io . Alc.runReporting incr $ runner
+  res <- io (run runner')
   val <- io . readIORef $ ref
   pure (res, val)
 
@@ -32,7 +31,7 @@ prop_executesNoActionWithNoCandidates :: Property
 prop_executesNoActionWithNoCandidates = property do
   x <- forAll (Gen.int (Range.linear 0 100))
 
-  let runner = Alc.new "no actions" (pure x)
+  let runner = withControl "no actions" (pure x)
 
   (val, amt) <- countExecutions runner
   x === val
@@ -43,8 +42,8 @@ prop_executesNoActionsWhenDisabled = property do
   x <- forAll (Gen.int (Range.linear 0 100))
 
   let runner
-        = Alc.new "no actions" (pure x)
-        & Alc.runIf (pure False)
+        = withControl "no actions" (pure x)
+        & runIf (pure False)
 
   (val, amt) <- countExecutions runner
   x === val
@@ -57,11 +56,11 @@ prop_runsAllTryBlocks = property do
   len <- forAll (Gen.int (Range.linear 1 10))
 
   let values = replicate len (modifyIORef ref succ)
-  let runner = Alc.new "N actions" (liftIO (pure ()))
+  let runner = withControl "N actions" (liftIO (pure ()))
 
-  let assembled = foldr Alc.try runner values
+  let assembled = foldr (candidate "") runner values
 
-  void . io . Alc.run @SomeException $ assembled
+  void . io . run @SomeException $ assembled
   amt <- io . readIORef $ ref
   amt === len
 
@@ -69,25 +68,24 @@ prop_executesNActionsForNMinusOneInvocations :: Property
 prop_executesNActionsForNMinusOneInvocations = property do
   len <- forAll (Gen.int (Range.linear 1 10))
   let values = replicate len ()
-  let runner = Alc.new "N actions" (liftIO (pure ()))
+  let runner = withControl "N actions" (liftIO (pure ()))
 
   let io = liftIO
   ref <- io (newIORef 0)
   let incr = const (modifyIORef ref succ)
 
-  for_ values (\_ -> io . Alc.runReporting @SomeException incr $ runner)
+  for_ values (\_ -> io . runReporting @SomeException incr $ runner)
   amt <- io . readIORef $ ref
   amt === len
   annotateShow (length values)
 
 prop_callsHandlerIO :: Property
 prop_callsHandlerIO = property $ do
-  let runner = Alc.new "example" (pure False)
-        & Alc.try (throwIO (userError "Oh no!"))
-        & Alc.handling (\_ _ -> pure True)
+  let runner = withControl "example" (pure False)
+        & candidate "always fails" (throwIO (userError "Oh no!"))
 
-  res <- liftIO (Alc.run @SomeException runner)
-  fst res === True
+  res <- liftIO (run @SomeException runner)
+  res === True
 
 tests :: IO Bool
 tests =

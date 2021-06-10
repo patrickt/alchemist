@@ -8,6 +8,7 @@ where
 import Alchemist.Experiment
 import Control.Monad.Catch qualified as Exc
 import Data.Text (Text)
+import Data.Monoid
 
 -- Note that if you use this in conjunction with @MonadError@,
 -- any errors thrown by @throwError@ will bubble up to their enclosing
@@ -20,7 +21,8 @@ new n c =
     { enabled = pure True,
       control = c,
       candidates = [],
-      raised = const Exc.throwM,
+      attempt = Exc.try,
+      report = getAp <$> mempty,
       name = n,
       comparator = \x y -> pure (x == y)
     }

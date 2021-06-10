@@ -1,56 +1,58 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Alchemist.IO
-  ( new,
+  ( withControl,
     run,
     runReporting,
 
     -- * Re-exports
-    module Alchemist.Experiment,
     (&),
+    module X,
   )
 where
 
-import Alchemist.Candidate hiding (name)
-import Alchemist.Experiment
+import Alchemist.Experiment as X
 import Alchemist.Internal.Shuffle
-import Alchemist.Observation
-import Alchemist.Result hiding (control)
-import Control.Exception (SomeException)
+import Alchemist.Internal.Types
+import Alchemist.Observation as X
+import Alchemist.Result as X
 import Control.Exception qualified as Exc
 import Control.Monad (filterM)
 import Control.Monad.IO.Class
 import Data.Function ((&))
+import Data.Monoid
 import Data.Text (Text)
 import Data.Time.Clock
 
 -- | Creates an 'Experiment' suitable for running an action in 'IO'. By default,
--- this experiment is 'enabled', has no 'candidates', and rethrows exceptions
--- encountered in its 'control'.
-new ::
-  forall e a .
+-- this experiment is 'enabled' and has no 'candidates'. The report function
+-- performs no action.
+withControl ::
+  forall e a.
   (Exc.Exception e, Eq a) =>
   -- | the name of this experiment
   Text ->
   -- | the control (default) action to run
   IO a ->
   Experiment IO e a
-new n c =
+withControl n c =
   Experiment
     { enabled = pure True,
       control = c,
       candidates = [],
-      raised = const Exc.throw,
+      attempt = Exc.try,
       name = n,
+      report = getAp <$> mempty,
       comparator = \x y -> pure (x == y)
     }
 
-execute :: (Exc.Exception e) => Experiment IO e a -> Candidate IO a -> IO (Observation IO e a)
+execute :: Experiment IO e a -> Candidate IO a -> IO (Observation IO e a)
 execute e c = do
   start <- liftIO getCurrentTime
-  val <- Exc.try (action c)
+  val <- attempt e (action c)
   end <- liftIO getCurrentTime
 
   pure
@@ -76,9 +78,12 @@ runReporting p e = do
       let res = Result datums normal wrong
       normal <$ p res
 
+run :: (Exc.Exception e) => Experiment IO e a -> IO a
+run = fmap fst . runWithResult
+
 -- | Run an 'Experiment' in the 'IO' monad.
-run :: (Exc.Exception e) => Experiment IO e a -> IO (a, Result IO e a)
-run e = do
+runWithResult :: (Exc.Exception e) => Experiment IO e a -> IO (a, Result IO e a)
+runWithResult e = do
   on <- enabled e
   normal <- control e
   if not on

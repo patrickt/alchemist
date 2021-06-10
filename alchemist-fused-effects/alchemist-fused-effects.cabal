@@ -48,7 +48,6 @@ library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     Control.Effect.Alchemist.Error
-                       Control.Effect.Alchemist.Lift
 
 test-suite alchemist-fused-effects-test
   import:              common-options
