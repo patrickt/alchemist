@@ -25,7 +25,7 @@ to a logging or telemetry service.
 
 > import Alchemist.IO
 >
-> withControl (print "control running")
+> experiment (print "control running")
 >   & withCandidate (print "candidate 1")
 >   & withCandidate (print "candidate 2")
 >   & run
@@ -38,13 +38,13 @@ The above code will print @"control running"@, and then zero, one, or both of th
 > import Database.SQLite.Simple
 >
 > let conn :: Connection = ...
-> rowCount <- withControl (length <$> query_ conn "SELECT * FROM users")
+> rowCount <- experiment (length <$> query_ conn "SELECT * FROM users")
 >   & withCandidate "faster" (fromOnly <$> query_ conn "SELECT COUNT(*) FROM users")
 >   & run
 
 In this example, we have a known-good behavior (extracting all users from a database, then computing)
 the length of that list), and a candidate that should be faster (unless our database is hideously broken).
-The @rowCount@ variable will be that returned by the action passed to @withControl@; as such, you can add
+The @rowCount@ variable will be that returned by the action passed to @experiment@; as such, you can add
 and remove experiments with reasonable confidence you won't affect semantics of downstream code (see the
 section on exception semantics below).
 
@@ -60,7 +60,7 @@ If you're working in 'IO', import 'Alchemist.IO'. If you're working in a monad t
 GHC's 'Control.Exception' hierarchy, import 'Alchemist.Catch'. Further packages will exist that
 provide effectful interfaces when catching error values with @mtl@ or @fused-effects@.
 
-The @withControl@ functions in the aforementioned modules create a new 'Experiment' value with sensible
+The @experiment@ functions in the aforementioned modules create a new 'Experiment' value with sensible
 defaults filled in. You can then use the combinators in "Control.Experiment" to populate the experiment with
 candidates. At the end, a @run@ function will execute the control and some (possibly empty) subset of its
 candidates. You can also import "Control.Experiment" directly and populate its record fields yourself, should

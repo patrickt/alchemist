@@ -23,6 +23,5 @@ new n c =
       candidates = [],
       attempt = Exc.try,
       report = getAp <$> mempty,
-      name = n,
-      comparator = \x y -> pure (x == y)
+      name = n
     }

@@ -17,7 +17,7 @@ import Hedgehog.Range qualified as Range
 import Data.IORef
 
 
-countExecutions :: MonadIO m => Experiment IO SomeException a -> m (a, Int)
+countExecutions :: (MonadIO m, Eq a) => Experiment IO SomeException a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
@@ -31,7 +31,7 @@ prop_executesNoActionWithNoCandidates :: Property
 prop_executesNoActionWithNoCandidates = property do
   x <- forAll (Gen.int (Range.linear 0 100))
 
-  let runner = withControl "no actions" (pure x)
+  let runner = experiment "no actions" (pure x)
 
   (val, amt) <- countExecutions runner
   x === val
@@ -42,7 +42,7 @@ prop_executesNoActionsWhenDisabled = property do
   x <- forAll (Gen.int (Range.linear 0 100))
 
   let runner
-        = withControl "no actions" (pure x)
+        = experiment "no actions" (pure x)
         & disable
 
   (val, amt) <- countExecutions runner
@@ -56,7 +56,7 @@ prop_runsAllTryBlocks = property do
   len <- forAll (Gen.int (Range.linear 1 10))
 
   let values = replicate len (modifyIORef ref succ)
-  let runner = withControl "N actions" (liftIO (pure ()))
+  let runner = experiment "N actions" (liftIO (pure ()))
 
   let assembled = foldr (withCandidate "") runner values
 
@@ -68,20 +68,20 @@ prop_executesNActionsForNMinusOneInvocations :: Property
 prop_executesNActionsForNMinusOneInvocations = property do
   len <- forAll (Gen.int (Range.linear 1 10))
   let values = replicate len ()
-  let runner = withControl "N actions" (liftIO (pure ()))
+  let runner = experiment "N actions" (liftIO (pure ()))
 
   let io = liftIO
   ref <- io (newIORef 0)
   let incr = const (modifyIORef ref succ)
 
-  for_ values (\_ -> io . runReporting @SomeException incr $ runner)
+  for_ values (\_ -> io (run . withReporting @SomeException @_ @() incr $ runner))
   amt <- io . readIORef $ ref
   amt === len
   annotateShow (length values)
 
 prop_callsHandlerIO :: Property
 prop_callsHandlerIO = property $ do
-  let runner = withControl "example" (pure False)
+  let runner = experiment "example" (pure False)
         & withCandidate "always fails" (throwIO (userError "Oh no!"))
 
   res <- liftIO (run @SomeException runner)

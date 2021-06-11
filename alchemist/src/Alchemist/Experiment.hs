@@ -24,7 +24,7 @@ withCandidate m c e = e {candidates = Candidate c m : candidates e}
 -- | Defines the reporting function that a given experiment should use
 -- to record or log information about the result of executing its
 -- candidates.
-withReporting :: (Observation m e a -> m ()) -> Experiment m e a -> Experiment m e a
+withReporting :: forall e m a . (Observation m e a -> m ()) -> Experiment m e a -> Experiment m e a
 withReporting f e = e { report = f }
 
 -- | Disable an experiment. A disabled experiment will still run its

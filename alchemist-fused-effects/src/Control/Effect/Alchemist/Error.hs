@@ -1,5 +1,5 @@
 module Control.Effect.Alchemist.Error
-  ( withControl
+  ( experiment
   ) where
 
 import Control.Effect.Error
@@ -8,20 +8,19 @@ import Data.Text (Text)
 import Data.Monoid
 
 -- | Creates an 'Experiment' suitable for running an action in 'IO'.
-withControl ::
+experiment ::
   (Eq a, Has (Error e) sig m) =>
   -- | the name of this experiment
   Text ->
   -- | the control (default) action to run
   m a ->
   Experiment m e a
-withControl n c =
+experiment n c =
   Experiment
     { enabled = pure True,
       control = c,
       candidates = [],
       attempt = \a -> catchError (Right `fmap` a) (return . Left),
       name = n,
-      report = getAp <$> mempty,
-      comparator = \x y -> pure (x == y)
+      report = getAp <$> mempty
     }

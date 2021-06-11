@@ -1,8 +1,10 @@
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_HADDOCK not-home #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-missing-deriving-strategies #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Alchemist.Internal.Types
   ( module Alchemist.Internal.Types
   )
@@ -38,13 +40,10 @@ data Experiment (m :: Type -> Type) e a = Experiment
     -- zero or more (depending on randomness) of the 'candidates'.
     control :: m a,
     -- | Each experiment has zero ore more /candidates/, representing new control paths that we may want to
-    -- evaluate. If a given candidate is executed, its result will be compared (using 'comparator') with the
+    -- evaluate. If a given candidate is executed, its result will be compared (using '==') with the
     -- result of executing the 'control', and information about that candidate will be recorded in a given
     -- 'Observation'.
     candidates :: [Candidate m a],
-    -- | This is used to compare the result of candidate execution with the control. This is usually the '=='
-    -- function in a monadic context, but it can be overridden should you require more fine-grained behavior.
-    comparator :: a -> a -> m Bool,
     -- | This determines whether the candidates in an experiment should be run at all. A disabled experiment
     -- will run only its control. This defaults to @pure True@.
     enabled :: m Bool,
@@ -64,7 +63,7 @@ data Experiment (m :: Type -> Type) e a = Experiment
 data Candidate (m :: Type -> Type) a = Candidate
   { action :: m a,
     name :: Text
-  }
+  } deriving Functor
 
 -- | A 'Result' contains all relevant information about an executed 'Experiment'.
 -- All recorded 'Observation' values are stored, and those whose associated candidates
@@ -83,7 +82,7 @@ instance Monoid a => Monoid (Result m e a) where
 
 data Observation (m :: Type -> Type) e a = Observation
   { duration :: NominalDiffTime,
-    experiment :: Experiment m e a,
+    parent :: Experiment m e a,
     candidate :: Candidate m a,
     value :: Either e a
   }
