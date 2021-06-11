@@ -1,18 +1,19 @@
-{-# LANGUAGE RankNTypes #-}
-{-# OPTIONS_HADDOCK not-home #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wno-missing-deriving-strategies #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# OPTIONS_HADDOCK not-home hide #-}
+
 module Alchemist.Internal.Types
-  ( module Alchemist.Internal.Types
+  ( module Alchemist.Internal.Types,
   )
 where
 
-import Data.Text (Text)
-import Data.Time.Clock
 import Data.Kind (Type)
+import Data.Text (Text)
+import Data.Time.Clock (NominalDiffTime)
+import Alchemist.Candidate
 
 -- | A representation of an experiment to be run. Though you can create these values manually, it may be more
 -- convenient to use the combinators present in modules like "Alchemist.IO" and "Alchemist.Catch", which are
@@ -56,14 +57,6 @@ data Experiment (m :: Type -> Type) e a = Experiment
     -- in the 'Observation' parameter. This can be useful for logging information about individual candidates.
     report :: Observation m e a -> m ()
   }
-
-
-
--- | A 'Candidate' wraps a monadic action and an identificatory name.
-data Candidate (m :: Type -> Type) a = Candidate
-  { action :: m a,
-    name :: Text
-  } deriving Functor
 
 -- | A 'Result' contains all relevant information about an executed 'Experiment'.
 -- All recorded 'Observation' values are stored, and those whose associated candidates

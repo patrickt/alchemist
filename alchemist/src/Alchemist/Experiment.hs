@@ -12,12 +12,13 @@ module Alchemist.Experiment
 where
 
 import Data.Text (Text)
+import Alchemist.Candidate
 import Alchemist.Internal.Types
 
--- | Add a new candidate action to the provided 'Experiment', using a
--- default name (@<experiment>@). When the resulting 'Experiment' is
--- invoked, the runner will execute the provided m action and report
--- the results via the
+-- | Add a new candidate action, with an associated name to the
+-- provided 'Experiment'. When the resulting 'Experiment' is invoked,
+-- the runner will execute the provided m action and report the
+-- results via its 'report' function.
 withCandidate :: Text -> m a -> Experiment m e a -> Experiment m e a
 withCandidate m c e = e {candidates = Candidate c m : candidates e}
 

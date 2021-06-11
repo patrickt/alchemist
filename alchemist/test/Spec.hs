@@ -60,7 +60,7 @@ prop_runsAllTryBlocks = property do
 
   let assembled = foldr (withCandidate "") runner values
 
-  void . io . run @SomeException $ assembled
+  void . io . run @() @SomeException $ assembled
   amt <- io . readIORef $ ref
   amt === len
 
@@ -84,7 +84,7 @@ prop_callsHandlerIO = property $ do
   let runner = experiment "example" (pure False)
         & withCandidate "always fails" (throwIO (userError "Oh no!"))
 
-  res <- liftIO (run @SomeException runner)
+  res <- liftIO (run @Bool @SomeException runner)
   res === True
 
 tests :: IO Bool

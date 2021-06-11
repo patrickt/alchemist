@@ -4,19 +4,38 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- |
+--
+-- Module      : Alchemist
+-- Copyright   : (c) Patrick Thomson, 2021
+-- License     : MIT
+-- Maintainer  : Patrick Thomson
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This module exports all the things you need to run 'Experiment's in the 'IO' monad.
 module Alchemist.IO
-  ( experiment,
+  ( -- * Constructing and configuring experiments
+    experiment,
+
+    -- ** Reexports from 'Experiment'
+    Alchemist.Experiment.withCandidate,
+    Alchemist.Experiment.withReporting,
+    Alchemist.Experiment.disable,
+
+    -- * Running experiments
     run,
 
     -- * Re-exports
     (&),
-    module Alchemist.Experiment,
   )
 where
 
+import Alchemist.Candidate
 import Alchemist.Experiment
 import Alchemist.Internal.Shuffle
-import Alchemist.Internal.Types
+import Alchemist.Observation
+import Alchemist.Result
 import Control.Exception qualified as Exc
 import Control.Monad (filterM)
 import Control.Monad.IO.Class
@@ -29,6 +48,9 @@ import Data.Time.Clock
 -- By default, this experiment is 'Alchemist.Experiment.enabled' and
 -- has no 'Alchemist.Experiment.candidates'. The report function
 -- performs no action.
+--
+-- You will generally pass the result of 'experiment' to one or more
+-- occurrences of the 'withCandidate' combinator.
 experiment ::
   Exc.Exception e =>
   -- | the name of this experiment
@@ -60,11 +82,11 @@ execute e c = do
         candidate = c
       }
 
-run :: (Exc.Exception e, Eq a) => Experiment IO e a -> IO a
+run :: Eq a => Experiment IO e a -> IO a
 run = fmap fst . runWithResult
 
 -- | Run an 'Experiment' in the 'IO' monad.
-runWithResult :: (Exc.Exception e, Eq a) => Experiment IO e a -> IO (a, Result IO e a)
+runWithResult :: Eq a => Experiment IO e a -> IO (a, Result IO e a)
 runWithResult e = do
   on <- enabled e
   normal <- control e
