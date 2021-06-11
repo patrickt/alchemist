@@ -1,6 +1,8 @@
 {-# OPTIONS_HADDOCK not-home #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# OPTIONS_GHC -Wno-missing-deriving-strategies #-}
 module Alchemist.Internal.Types
   ( module Alchemist.Internal.Types
   )
@@ -51,26 +53,37 @@ data Experiment (m :: Type -> Type) e a = Experiment
     -- | Experiments proactively handle errors that occur during their execution. This function describes
     -- how the given monad should try to run a given candidate. One example valid signature is "Control.Exception.try".
     attempt :: m a -> m (Either e a),
-    -- | Experiments can report
-    report :: Result m e a -> m ()
+    -- | When a candidate finishes executing, it will call this function, passing information about its execution
+    -- in the 'Observation' parameter. This can be useful for logging information about individual candidates.
+    report :: Observation m e a -> m ()
   }
 
+
+
+-- | A 'Candidate' wraps a monadic action and an identificatory name.
 data Candidate (m :: Type -> Type) a = Candidate
   { action :: m a,
-    name' :: Text
+    name :: Text
   }
 
+-- | A 'Result' contains all relevant information about an executed 'Experiment'.
+-- All recorded 'Observation' values are stored, and those whose associated candidates
+-- failed or produced a result not equal to the control are also present in 'mismatched'.
 data Result (m :: Type -> Type) e a = Result
   { observations :: [Observation m e a],
-    control' :: a,
+    controlValue :: a,
     mismatched :: [Observation m e a]
   }
+
+instance Semigroup a => Semigroup (Result m e a) where
+  Result o c m <> Result o' c' m' = Result (o <> o') (c <> c') (m <> m')
+
+instance Monoid a => Monoid (Result m e a) where
+  mempty = Result [] mempty []
 
 data Observation (m :: Type -> Type) e a = Observation
   { duration :: NominalDiffTime,
     experiment :: Experiment m e a,
+    candidate :: Candidate m a,
     value :: Either e a
   }
-
-attemptEither :: Either e a -> Either e (Either e a)
-attemptEither = Right

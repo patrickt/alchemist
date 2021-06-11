@@ -1,6 +1,10 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Alchemist.IO
@@ -10,15 +14,13 @@ module Alchemist.IO
 
     -- * Re-exports
     (&),
-    module X,
+    module Alchemist.Experiment,
   )
 where
 
-import Alchemist.Experiment as X
+import Alchemist.Experiment
 import Alchemist.Internal.Shuffle
 import Alchemist.Internal.Types
-import Alchemist.Observation as X
-import Alchemist.Result as X
 import Control.Exception qualified as Exc
 import Control.Monad (filterM)
 import Control.Monad.IO.Class
@@ -27,8 +29,9 @@ import Data.Monoid
 import Data.Text (Text)
 import Data.Time.Clock
 
--- | Creates an 'Experiment' suitable for running an action in 'IO'. By default,
--- this experiment is 'enabled' and has no 'candidates'. The report function
+-- | Creates an 'Experiment' suitable for running an action in 'IO'.
+-- By default, this experiment is 'Alchemist.Experiment.enabled' and
+-- has no 'Alchemist.Experiment.candidates'. The report function
 -- performs no action.
 withControl ::
   forall e a.
@@ -59,7 +62,8 @@ execute e c = do
     Observation
       { duration = diffUTCTime end start,
         experiment = e,
-        value = val
+        value = val,
+        candidate = c
       }
 
 runReporting :: (Exc.Exception e) => (Result IO e a -> IO ()) -> Experiment IO e a -> IO a

@@ -5,9 +5,9 @@ module Alchemist.Experiment
   ( Experiment (..),
 
     -- * Fluent constructors
-    candidate,
-    reportingWith,
-    runIf,
+    withCandidate,
+    withReporting,
+    disable,
   )
 where
 
@@ -18,17 +18,19 @@ import Alchemist.Internal.Types
 -- default name (@<experiment>@). When the resulting 'Experiment' is
 -- invoked, the runner will execute the provided m action and report
 -- the results via the
-candidate :: Text -> m a -> Experiment m e a -> Experiment m e a
-candidate m c e = e {candidates = Candidate c m : candidates e}
+withCandidate :: Text -> m a -> Experiment m e a -> Experiment m e a
+withCandidate m c e = e {candidates = Candidate c m : candidates e}
 
 -- | Defines the reporting function that a given experiment should use
 -- to record or log information about the result of executing its
 -- candidates.
-reportingWith :: (Result m e a -> m ()) -> Experiment m e a -> Experiment m e a
-reportingWith f e = e { report = f }
+withReporting :: (Observation m e a -> m ()) -> Experiment m e a -> Experiment m e a
+withReporting f e = e { report = f }
 
--- | Conditionally enable or disable (via the @enabled@ field)an
--- experiment. An experiment that is disabled will always return its
--- control value and will not call its publish function.
-runIf :: m Bool -> Experiment m e a -> Experiment m e a
-runIf x e = e {enabled = x}
+-- | Disable an experiment. A disabled experiment will still run its
+-- control but will not execute any of its candidates.
+--
+-- @ disable = set #enabled (pure False) @
+--
+disable :: Applicative m => Experiment m e a -> Experiment m e a
+disable e = e {enabled = pure False }

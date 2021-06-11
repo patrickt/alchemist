@@ -21,7 +21,7 @@ countExecutions :: MonadIO m => Experiment IO SomeException a -> m (a, Int)
 countExecutions runner = do
   let io = liftIO
   ref <- io (newIORef 0)
-  let runner' = reportingWith (const (modifyIORef ref succ)) runner
+  let runner' = withReporting (const (modifyIORef ref succ)) runner
 
   res <- io (run runner')
   val <- io . readIORef $ ref
@@ -43,7 +43,7 @@ prop_executesNoActionsWhenDisabled = property do
 
   let runner
         = withControl "no actions" (pure x)
-        & runIf (pure False)
+        & disable
 
   (val, amt) <- countExecutions runner
   x === val
@@ -58,7 +58,7 @@ prop_runsAllTryBlocks = property do
   let values = replicate len (modifyIORef ref succ)
   let runner = withControl "N actions" (liftIO (pure ()))
 
-  let assembled = foldr (candidate "") runner values
+  let assembled = foldr (withCandidate "") runner values
 
   void . io . run @SomeException $ assembled
   amt <- io . readIORef $ ref
@@ -82,7 +82,7 @@ prop_executesNActionsForNMinusOneInvocations = property do
 prop_callsHandlerIO :: Property
 prop_callsHandlerIO = property $ do
   let runner = withControl "example" (pure False)
-        & candidate "always fails" (throwIO (userError "Oh no!"))
+        & withCandidate "always fails" (throwIO (userError "Oh no!"))
 
   res <- liftIO (run @SomeException runner)
   res === True
